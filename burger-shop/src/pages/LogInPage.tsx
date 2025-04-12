@@ -1,5 +1,5 @@
 import React from 'react'
-import Form from '../features/Profile/components/Form'
+import Form from '../features/User/components/Form'
 import { Link } from 'react-router-dom'
 
 type Props = {}

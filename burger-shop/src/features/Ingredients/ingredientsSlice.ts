@@ -2,12 +2,9 @@ import { createSelector, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { Ingredient } from "./models/Ingredient";
 import { RootState } from "../../app/index";
 
-
-
 type initialStateType = {
     ingredients: Array<Ingredient>,
     burger: Array<Ingredient>,
-
 }
 
 const initialState: initialStateType = {

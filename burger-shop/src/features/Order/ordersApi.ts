@@ -1,20 +1,21 @@
 import { api } from "../../app/api";
-import ENDPOINTS from "../../app/auth/endopoints";
-import { Ingredient } from "../Ingredients/models/Ingredient";
-
-export interface RequestOrders {
-    ingredients: Ingredient[][],
-    queue: number
-}
+import ENDPOINTS from "../../app/endopoints";
+import { PreOrder } from "./models/types";
 
 interface AddOrderRequest {
     message: string,
     success: boolean
 }
 
+export interface RequestOrder {
+    ingredients: PreOrder,
+    queue: number,
+    userId: number
+}
+
 export const ordersApi = api.enhanceEndpoints({ addTagTypes: ['ingredients', 'orders'] }).injectEndpoints({
     endpoints: (build) => ({
-        addOrder: build.mutation<AddOrderRequest, Ingredient[]>({
+        addOrder: build.mutation<AddOrderRequest, PreOrder>({
             query: (body) => ({
                 url: ENDPOINTS.AUTH.ADDORDER,
                 method: 'POST',
@@ -22,7 +23,7 @@ export const ordersApi = api.enhanceEndpoints({ addTagTypes: ['ingredients', 'or
             }),
             invalidatesTags: ['orders']
         }),
-        getOrders: build.query<RequestOrders[], null>({
+        getOrders: build.query<RequestOrder[], null>({
             query: () => ENDPOINTS.AUTH.ORDERS,
             providesTags: ['orders']
         })

@@ -1,74 +1,109 @@
 import React, { useState } from 'react'
 import style from './Form.module.css'
-import { useResetPasswordMutation } from '../features/Profile/userApi'
+import { useResetPasswordRequestMutation, useResetPasswordMutation } from '../features/User/userApi'
+import { useNavigate, useParams } from 'react-router-dom';
 
-const ResetPasswordForm = () => {
-    const [step, setStep] = useState<'email' | 'password'>('email')
-    const [email, setEmail] = useState<string>('')
-    const [newPassword, setNewPassword] = useState<string>('')
+type RouteParams = {
+    reset_token: string
+}
 
+const ResetPasswordRequestForm = () => {
+    const { reset_token } = useParams<RouteParams>()
+    const navigate = useNavigate()
+
+    const [emailValue, setEmailValue] = useState<string>('')
+    const [newPasswordValue, setNewPasswordValue] = useState<string>('')
+    const [message, setMessage] = useState<string>('')
+    // const [step, setStep] = useState<number>(1)
+
+    const [resetPasswordRequest] = useResetPasswordRequestMutation()
     const [resetPassword] = useResetPasswordMutation()
 
-    const handleEmailSubmit = async (e: React.FormEvent) => {
+    const handleSubmitEmail = async (e: React.FormEvent) => {
         e.preventDefault()
 
-        if (!email) {
+        if (!emailValue) {
             alert('Введите email!')
             return
         }
+        try {
+            const response = await resetPasswordRequest({
+                email: emailValue,
+            })
 
-        alert(`Сообщение отправлено на ${email}. Проверьте вашу почту.`)
-        setStep('password')
+            if (response?.data) {
+                setMessage(`Письмо с инструкциями отправлено на ${emailValue}.`)
+                // setStep(2)
+            } else {
+                setMessage('Произошла ошибка. Попробуйте снова.')
+            }
+        } catch (error) {
+            setMessage('Ошибка при отправке запроса.')
+        }
     }
 
-    const handlePasswordSubmit = async (e: React.FormEvent) => {
+    const handleChangePassword = async (e: React.FormEvent) => {
         e.preventDefault()
 
-        if (!newPassword) {
-            alert('Введите новый пароль!')
+        if (!newPasswordValue) {
+            alert('Заполните все поля')
             return
         }
+        try {
+            const responce = await resetPassword({
+                //* ! для того, чтобы указать, что не null и не undifinded
+                token: reset_token!,
+                newPassword: newPasswordValue
+            })
 
-        const result = await resetPassword({
-            login: email, password: newPassword,
-            email: ''
-        })
-        if (result.data) {
-            alert('Пароль успешно изменён!')
-        } else {
-            alert('Произошла ошибка при изменении пароля')
+            if (responce?.data) {
+                setMessage('Пароль был изменён')
+                navigate('/login')
+            } else {
+                setMessage('Произошла ошибка. Попробуйте снова.')
+            }
+
+        } catch (error) {
+            setMessage('Ошибка при изменении пароля')
         }
     }
 
     return (
-        <div>
-            {step === 'email' && (
-                <form onSubmit={handleEmailSubmit} className={style.container}>
-                    <input
-                        type='email'
-                        onChange={(e) => setEmail(e.target.value)}
-                        value={email}
-                        placeholder='Введите email' />
-                    <button type="submit">
-                        <p className="text text_type_main-small">Отправить сообщение на email</p>
-                    </button>
-                </form>
-            )}
+        <>
+            <div className={style.container}>
+                {!reset_token && (
+                    <form onSubmit={handleSubmitEmail} className={style.form}>
+                        <input
+                            type="email"
+                            value={emailValue}
+                            onChange={(e) => setEmailValue(e.target.value)}
+                            placeholder="Введите ваш email"
+                            required
+                        />
+                        <button type="submit">
+                            <p className="text text_type_main-small">Отправить запрос на сброс пароля</p>
+                        </button>
+                    </form>
+                )}
 
-            {step === 'password' && (
-                <form onSubmit={handlePasswordSubmit} className={style.container}>
-                    <input
-                        type='password'
-                        onChange={(e) => setNewPassword(e.target.value)}
-                        value={newPassword}
-                        placeholder='Введите новый пароль' />
-                    <button type="submit">
-                        <p className="text text_type_main-small">Сохранить новый пароль</p>
-                    </button>
-                </form>
-            )}
-        </div>
+                {reset_token && (
+                    <form onSubmit={handleChangePassword} className={style.form}>
+                        <input
+                            type="password"
+                            value={newPasswordValue}
+                            onChange={(e) => setNewPasswordValue(e.target.value)}
+                            placeholder="Введите новый пароль"
+                            required
+                        />
+                        <button type="submit">
+                            <p className="text text_type_main-small">Изменить пароль</p>
+                        </button>
+                    </form>
+                )}
+            </div>
+            <p className="text text_type_main-default">{message}</p>
+        </>
     )
 }
 
-export default ResetPasswordForm
+export default ResetPasswordRequestForm
